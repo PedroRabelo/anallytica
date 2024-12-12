@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { parse } from "csv-parse";
-import { createReadStream } from "fs";
+import { createReadStream, unlink } from "fs";
 import { PrismaService } from "src/shared/database/prisma.service";
 import { UploadCandleFileDto } from "../file-upload/dto/upload-candle-file-dto";
 
@@ -17,12 +17,19 @@ export class CandlesService {
     createReadStream(filePath)
       .pipe(parse({ delimiter: ';', from_line: 2 }))
       .on("data", async function (row) {
-        console.log(row)
         lines.push(row)
       })
       .on("end", function () {
         console.log("finished")
         console.log(lines)
+        unlink(filePath, (err) => {
+          if (err) {
+            console.error(`Error removing file: ${err}`);
+            return;
+          }
+
+          console.log(`File ${filePath} has been successfully removed.`);
+        })
       })
       .on("error", function (error) {
         console.error(error.message)
